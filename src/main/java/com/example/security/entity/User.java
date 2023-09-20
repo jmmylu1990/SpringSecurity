@@ -11,7 +11,7 @@ import java.util.Objects;
 
 @Table(name = "USER")
 @Entity
-public @Data class User implements UserDetails {
+public @Data class User extends Superclass implements UserDetails {
 
     @Id
     private String id;

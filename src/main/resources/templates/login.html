@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>登陸</title>
+</head>
+<body>
+<h3>表單登陸</h3>
+<form method="post" th:action="@{/login/form}">
+    <input type="text" name="name" placeholder="用户名"><br>
+    <input type="password" name="pwd" placeholder="密码"><br>
+    <div th:if="${param.error}">
+        <span th:text="${session.SPRING_SECURITY_LAST_EXCEPTION.message}" style="color:red">用戶名或密碼錯誤</span>
+    </div>
+    <button type="submit">登陸</button>
+</form>
+</body>
+</html>

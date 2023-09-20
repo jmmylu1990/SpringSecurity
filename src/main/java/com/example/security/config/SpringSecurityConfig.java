@@ -1,5 +1,8 @@
 package com.example.security.config;
 
+import com.example.security.component.CustomAuthenticationFailureHandler;
+import com.example.security.serive.CustomUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,10 +10,16 @@ import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 
 @EnableWebSecurity       // 開啟 MVC Security 安全配置
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
-
+    @Autowired
+    private CustomUserDetailsService userDetailsService;
+    @Autowired
+    private SavedRequestAwareAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+    @Autowired
+    private CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
     /**
      * 密碼編碼器，密碼不能明文儲存
      */
@@ -28,9 +37,11 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         //採用內存儲存方式，用戶認證信息儲存在內存中
-        auth.inMemoryAuthentication()
-                .withUser("admin").password(passwordEncoder()
-                        .encode("123456")).roles("ADMIN");
+//        auth.inMemoryAuthentication()
+//                .withUser("admin").password(passwordEncoder()
+//                        .encode("123456")).roles("ADMIN");
+        // 不再使用記憶體方式儲存使用者認證訊息，而是動態從資料庫中獲取
+        auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
     }
 
     /**
@@ -54,15 +65,32 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 設定登入表單中的密碼參數，預設為 password
                 .passwordParameter("pwd")
                 // 認證成功處理，如果存在原始存取路徑，則重定向到該路徑；如果沒有，則重定向 /index
-                .defaultSuccessUrl("/index")
+                //即設定使用者認證成功後重定向的位址。 這裡需要注意，該路徑是使用者直接存取登入頁面認證成功後重定向的路徑，
+                // 如果是其他路徑跳到登入頁面認證成功後會重新導向到原始存取路徑。 可設定第二個參數為 true，使認證成功後始終重定向到該位址。
+                //.defaultSuccessUrl("/index")
                 // 認證失敗處理，重定向到指定位址，預設為 loginPage() + ?error；該路徑不設限訪問
-                .failureUrl("/login/page?error");
+                //.failureUrl("/login/page?error")
+                .successHandler(customAuthenticationSuccessHandler)
+                .failureHandler(customAuthenticationFailureHandler);
+
+        //這裡需要簡單介紹下Spring Security的授權方式，
+        // 在Spring Security中角色屬於權限的一部分。
+        // 對於角色ROLE_ADMIN的授權方式有兩種：hasRole("ADMIN")和hasAuthority("ROLE_ADMIN")，
+        // 這兩種方式是等價的。 可能有人會疑惑，為什麼在資料庫中的角色名稱添加了ROLE_前綴，
+        // 而 hasRole() 配置時不需要加ROLE_前綴，因為原始碼hasRole()在判斷權限時會自動在角色名前面加上ROLE_前綴，
+        // 所以設定時不需要加上ROLE_前綴，同時這也要求 UserDetails 物件的權限集合中儲存的角色名稱要有ROLE_前綴。
+        // 如果不希望符合這個前綴，那麼改為呼叫 hasAuthority() 方法即可。
 
         // 開啟基於 HTTP 請求存取控制
         http.authorizeRequests()
                 // 以下訪問不需要任何權限，任何人都可以訪問
                 .antMatchers("/login/page").permitAll()
-                // 其它任何请求访问都需要先通过认证
+                // 以下存取需要 ROLE_ADMIN 權限
+                .antMatchers("/admin/**").hasRole("ADMIN")
+                // 以下存取需要 ROLE_USER 權限
+                .antMatchers("/user/**").hasAuthority("ROLE_USER")
+                // 其它任何請求存取都需要先通過認證
+                .antMatchers("/test/**").permitAll()
                 .anyRequest().authenticated();
 
         // 關閉 csrf 防護

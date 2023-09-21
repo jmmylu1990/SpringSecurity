@@ -9,6 +9,8 @@
 <form method="post" th:action="@{/login/form}">
     <input type="text" name="name" placeholder="用户名"><br>
     <input type="password" name="pwd" placeholder="密码"><br>
+    <input name="imageCode" type="text" placeholder="验证码"><br>
+    <img th:onclick="this.src='/code/image?'+Math.random()" th:src="@{/code/image}" alt="验证码"/><br>
     <div th:if="${param.error}">
         <span th:text="${session.SPRING_SECURITY_LAST_EXCEPTION.message}" style="color:red">用戶名或密碼錯誤</span>
     </div>

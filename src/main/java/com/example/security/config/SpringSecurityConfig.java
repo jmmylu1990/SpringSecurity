@@ -1,6 +1,7 @@
 package com.example.security.config;
 
 import com.example.security.component.CustomAuthenticationFailureHandler;
+import com.example.security.component.ImageCodeValidateFilter;
 import com.example.security.serive.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -11,6 +12,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @EnableWebSecurity       // 開啟 MVC Security 安全配置
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -20,6 +22,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     private SavedRequestAwareAuthenticationSuccessHandler customAuthenticationSuccessHandler;
     @Autowired
     private CustomAuthenticationFailureHandler customAuthenticationFailureHandler;
+
+    @Autowired
+    private ImageCodeValidateFilter imageCodeValidateFilter; // 自訂過濾器（圖形驗證碼校驗）
+
     /**
      * 密碼編碼器，密碼不能明文儲存
      */
@@ -84,7 +90,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         // 開啟基於 HTTP 請求存取控制
         http.authorizeRequests()
                 // 以下訪問不需要任何權限，任何人都可以訪問
-                .antMatchers("/login/page").permitAll()
+                .antMatchers("/login/page","/code/image").permitAll()
                 // 以下存取需要 ROLE_ADMIN 權限
                 .antMatchers("/admin/**").hasRole("ADMIN")
                 // 以下存取需要 ROLE_USER 權限
@@ -95,6 +101,9 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
         // 關閉 csrf 防護
         http.csrf().disable();
+
+        // 將自訂過濾器（圖形驗證碼校驗）新增至 UsernamePasswordAuthenticationFilter 之前
+        http.addFilterBefore(imageCodeValidateFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
     /**

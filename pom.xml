@@ -86,6 +86,13 @@
 			<version>3.10</version>
 		</dependency>
 
+		<!-- 圖片驗證碼工具 kaptcha Google提供-->
+		<dependency>
+			<groupId>com.github.penggle</groupId>
+			<artifactId>kaptcha</artifactId>
+			<version>2.3.2</version>
+		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

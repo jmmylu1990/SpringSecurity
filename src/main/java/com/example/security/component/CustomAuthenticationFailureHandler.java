@@ -2,6 +2,7 @@ package com.example.security.component;
 
 import com.example.security.pojo.ResultData;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -33,10 +34,13 @@ public class CustomAuthenticationFailureHandler extends SimpleUrlAuthenticationF
             response.setContentType("application/json;charset=utf-8");
             response.getWriter().write(objectMapper.writeValueAsString(new ResultData<>(1, "驗證失敗!")));
         }else {
-            // 以下配置等同於 failureUrl("/login/page?error")
-            // 認證失敗後，重定向到指定地址
-            // 設定預設的重定的路徑
-            super.setDefaultFailureUrl("/login/page?error");
+            //用戶名稱、密碼方式登陸出現異常，需要Redirect到 /login/page?error
+            //用手機簡訊驗證碼方式登陸出現認證異常，需要Redirect到 /mobile/?error
+            // 使用 Referer 取得目前登入表單提交請求是從哪個登入頁面(/login/page 或 /mobile/page)連結過來的
+            String refer = request.getHeader("Referer");
+            String lastUrl = StringUtils.substringBefore(refer, "?");
+            // 設定預設的Redirect路徑
+            super.setDefaultFailureUrl(lastUrl + "?error");
             // 呼叫父類別的 onAuthenticationFailure() 方法
             super.onAuthenticationFailure(request, response, e);
         }

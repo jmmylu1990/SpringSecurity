@@ -2,7 +2,8 @@ package com.example.security.config;
 
 import com.example.security.component.CustomAuthenticationFailureHandler;
 import com.example.security.component.ImageCodeValidateFilter;
-import com.example.security.serive.CustomUserDetailsService;
+import com.example.security.component.MobileAuthenticationConfig;
+import com.example.security.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
@@ -25,6 +26,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private ImageCodeValidateFilter imageCodeValidateFilter; // 自訂過濾器（圖形驗證碼校驗）
+
+    @Autowired
+    private MobileAuthenticationConfig mobileAuthenticationConfig; // 手機簡訊驗證碼認證方式的設定類
+    //...
 
     /**
      * 密碼編碼器，密碼不能明文儲存
@@ -90,7 +95,7 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         // 開啟基於 HTTP 請求存取控制
         http.authorizeRequests()
                 // 以下訪問不需要任何權限，任何人都可以訪問
-                .antMatchers("/login/page","/code/image").permitAll()
+                .antMatchers("/login/page","/code/image", "/mobile/page", "/code/mobile").permitAll()
                 // 以下存取需要 ROLE_ADMIN 權限
                 .antMatchers("/admin/**").hasRole("ADMIN")
                 // 以下存取需要 ROLE_USER 權限
@@ -104,6 +109,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
         // 將自訂過濾器（圖形驗證碼校驗）新增至 UsernamePasswordAuthenticationFilter 之前
         http.addFilterBefore(imageCodeValidateFilter, UsernamePasswordAuthenticationFilter.class);
+        // 將手機簡訊驗證碼認證的配置與目前的設定綁定
+        http.apply(mobileAuthenticationConfig);
     }
 
     /**

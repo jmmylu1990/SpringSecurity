@@ -14,6 +14,7 @@
     <div th:if="${param.error}">
         <span th:text="${session.SPRING_SECURITY_LAST_EXCEPTION.message}" style="color:red">用戶名或密碼錯誤</span>
     </div>
+    <div><input name="remember-me" type="checkbox">記住我</div>
     <button type="submit">登陸</button>
 </form>
 </body>

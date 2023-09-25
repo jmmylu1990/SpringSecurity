@@ -111,6 +111,23 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         http.addFilterBefore(imageCodeValidateFilter, UsernamePasswordAuthenticationFilter.class);
         // 將手機簡訊驗證碼認證的配置與目前的設定綁定
         http.apply(mobileAuthenticationConfig);
+
+
+        // 開啟 Remember-Me 功能
+        http.rememberMe()
+                // 指定登入時「記得我」的 HTTP 參數，預設為 remember-me
+                .rememberMeParameter("remember-me")
+                // 設定 Token 有效期為 200s，預設時長為 2 星期
+                .tokenValiditySeconds(200)
+                // 指定 UserDetailsService 對象
+                .userDetailsService(userDetailsService);
+
+        // 開啟註銷登陸功能
+        http.logout()
+                // 使用者登出登入時造訪的 url，預設為 /logout
+                .logoutUrl("/logout")
+                // 使用者成功登出登入後重定向的位址，預設為 loginPage() + ?logout
+                .logoutSuccessUrl("/login/page?logout");
     }
 
     /**

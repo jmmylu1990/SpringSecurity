@@ -1,9 +1,6 @@
 package com.example.security.config;
 
-import com.example.security.component.CustomAuthenticationFailureHandler;
-import com.example.security.component.CustomLogoutSuccessHandler;
-import com.example.security.component.ImageCodeValidateFilter;
-import com.example.security.component.MobileAuthenticationConfig;
+import com.example.security.component.*;
 import com.example.security.repository.PersistentLoginsRepository;
 import com.example.security.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +35,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private CustomLogoutSuccessHandler logoutSuccessHandler;
+    @Autowired
+    private CustomInvalidSessionStrategy invalidSessionStrategy;
 
     /**
      * 密碼編碼器，密碼不能明文儲存
@@ -120,7 +119,6 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         // 將手機簡訊驗證碼認證的配置與目前的設定綁定
         http.apply(mobileAuthenticationConfig);
 
-
         // 開啟 Remember-Me 功能
         http.rememberMe()
                 // 指定登入時「記得我」的 HTTP 參數，預設為 remember-me
@@ -146,6 +144,12 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .invalidateHttpSession(true)
                 // 使用者登出登入時是否立即清除使用者認證資訊 Authentication，預設為 true
                 .clearAuthentication(true);
+        // 開啟 Session 會話管理配置
+        http.sessionManagement()
+                // 設定 Session 會話失效時重定向路徑，預設為 loginPage()
+                //.invalidSessionUrl("/login/page");
+        // 配置使用自訂的 Session 會話失效處理策略
+                .invalidSessionStrategy(invalidSessionStrategy);
 
 
     }

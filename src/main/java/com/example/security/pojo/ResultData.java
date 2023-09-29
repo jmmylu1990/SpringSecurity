@@ -14,7 +14,7 @@ public class ResultData<T> {
      */
     public ResultData() {
         this.code = 0;
-        this.msg = "发布成功！";
+        this.msg = "發布成功!!";
     }
 
     /**
@@ -31,7 +31,7 @@ public class ResultData<T> {
     public ResultData(T data) {
         this.data = data;
         this.code = 0;
-        this.msg = "发布成功！";
+        this.msg = "發布成功!!";
     }
 
     /**

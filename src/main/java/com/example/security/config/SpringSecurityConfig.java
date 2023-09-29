@@ -1,8 +1,10 @@
 package com.example.security.config;
 
 import com.example.security.component.CustomAuthenticationFailureHandler;
+import com.example.security.component.CustomLogoutSuccessHandler;
 import com.example.security.component.ImageCodeValidateFilter;
 import com.example.security.component.MobileAuthenticationConfig;
+import com.example.security.repository.PersistentLoginsRepository;
 import com.example.security.service.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -14,6 +16,7 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
 @EnableWebSecurity       // 開啟 MVC Security 安全配置
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -29,7 +32,12 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private MobileAuthenticationConfig mobileAuthenticationConfig; // 手機簡訊驗證碼認證方式的設定類
-    //...
+
+    @Autowired
+    private PersistentTokenRepository tokenRepository;
+
+    @Autowired
+    private CustomLogoutSuccessHandler logoutSuccessHandler;
 
     /**
      * 密碼編碼器，密碼不能明文儲存
@@ -100,8 +108,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/admin/**").hasRole("ADMIN")
                 // 以下存取需要 ROLE_USER 權限
                 .antMatchers("/user/**").hasAuthority("ROLE_USER")
-                // 其它任何請求存取都需要先通過認證
                 .antMatchers("/test/**").permitAll()
+                // 其它任何請求存取都需要先通過認證
                 .anyRequest().authenticated();
 
         // 關閉 csrf 防護
@@ -119,6 +127,8 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 .rememberMeParameter("remember-me")
                 // 設定 Token 有效期為 200s，預設時長為 2 星期
                 .tokenValiditySeconds(200)
+                // 設定操作資料庫的Repository
+                .tokenRepository(tokenRepository)
                 // 指定 UserDetailsService 對象
                 .userDetailsService(userDetailsService);
 
@@ -127,7 +137,17 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 使用者登出登入時造訪的 url，預設為 /logout
                 .logoutUrl("/logout")
                 // 使用者成功登出登入後重定向的位址，預設為 loginPage() + ?logout
-                .logoutSuccessUrl("/login/page?logout");
+                //.logoutSuccessUrl("/login/page?logout")
+                // 不再使用 logoutSuccessUrl() 方法，使用自訂的成功登出登入處理器
+                .logoutSuccessHandler(logoutSuccessHandler)
+                // 指定用户注销登录时删除的 Cookie
+                .deleteCookies("JSESSIONID")
+                // 使用者登出登入時是否立即清除使用者的 Session，預設為 true
+                .invalidateHttpSession(true)
+                // 使用者登出登入時是否立即清除使用者認證資訊 Authentication，預設為 true
+                .clearAuthentication(true);
+
+
     }
 
     /**

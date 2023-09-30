@@ -41,6 +41,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private CustomInvalidSessionStrategy invalidSessionStrategy;
 
+    // 自訂最舊會話失效策略
+    @Autowired
+    private CustomSessionInformationExpiredStrategy sessionInformationExpiredStrategy;
+
     /**
      * 密碼編碼器，密碼不能明文儲存
      */
@@ -171,8 +175,15 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
         // 配置使用自訂的 Session 會話失效處理策略
                 .invalidSessionStrategy(invalidSessionStrategy)
                 .maximumSessions(1)
-                .maxSessionsPreventsLogin(true)
-                .sessionRegistry(sessionRegistry());
+                // 設定為 true，表示某使用者達到最大會話並發數後，新會話要求會被拒絕登入；
+                // 設定為 false，表示某使用者達到最大會話並發數後，新會話請求存取時，其最舊會話會在下次要求時失效
+                .maxSessionsPreventsLogin(false)
+                .sessionRegistry(sessionRegistry())
+                // 最舊會話在下一次請求時失效，並重定向到 /login/page
+                //.expiredUrl("/login/page");
+                // 最舊會話在下次請求時失效，並按照自訂策略處理
+                .expiredSessionStrategy(sessionInformationExpiredStrategy);
+
 
 
     }

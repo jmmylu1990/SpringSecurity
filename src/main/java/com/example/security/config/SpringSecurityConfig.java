@@ -10,10 +10,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
+import org.springframework.security.web.session.HttpSessionEventPublisher;
 
 @EnableWebSecurity       // 開啟 MVC Security 安全配置
 public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
@@ -45,6 +48,23 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
     public BCryptPasswordEncoder passwordEncoder() {
         // 使用 BCryptPasswordEncoder 密碼編碼器，該編碼器會將隨機產生的 salt 混入最终生成的密文中
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * 註冊 SessionRegistry，該 Bean 用於管理 Session 會話並發控制
+     */
+    @Bean
+    public SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
+    }
+
+    /**
+     * 設定 Session 的監聽器（注意：如果使用併發 Sessoion 控制，一般都需要設定該監聽器）
+     * 解決 Session 失效後, SessionRegistry 中 SessionInformation 沒有同步失效的問題
+     */
+    @Bean
+    public HttpSessionEventPublisher httpSessionEventPublisher() {
+        return new HttpSessionEventPublisher();
     }
 
     /**
@@ -149,7 +169,10 @@ public class SpringSecurityConfig extends WebSecurityConfigurerAdapter {
                 // 設定 Session 會話失效時重定向路徑，預設為 loginPage()
                 //.invalidSessionUrl("/login/page");
         // 配置使用自訂的 Session 會話失效處理策略
-                .invalidSessionStrategy(invalidSessionStrategy);
+                .invalidSessionStrategy(invalidSessionStrategy)
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(true)
+                .sessionRegistry(sessionRegistry());
 
 
     }
